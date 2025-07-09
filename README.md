@@ -6,7 +6,7 @@ Sometimes, switching from one environment to another can be tedious and exhausti
 ## Usage
 ```
 sudo su 
-wget https://github.com/justakazh/IET/raw/refs/heads/main/install.sh && chmod +x install.sh && ./install.sh
+curl -sSL https://github.com/justakazh/IET/raw/refs/heads/main/install.sh | bash
 ```
 
 ## Improvement 
