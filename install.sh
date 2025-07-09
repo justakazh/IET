@@ -1,125 +1,204 @@
-#utilities
-cd /tmp
-apt install python3-pip nano wget unzip curl jq whois git pipx -y
-wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz && rm -rf /usr/local/go && tar -C /usr/local -xzf go1.24.4.linux-amd64.tar.gz && rm https://go.dev/dl/go1.24.4.linux-amd64.tar.gz*
-export PATH=$PATH:/usr/local/go/bin:/root/go/bin
-ln -s /usr/bin/python3 /usr/bin/python
-mkdir /root/tools
-mkdir /root/tools/bin
-mkdir /root/tools/sources
+#!/bin/bash
 
+TOOLS_DIR="/root/tools"
+BIN_DIR="$TOOLS_DIR/bin"
+SRC_DIR="$TOOLS_DIR/sources"
 
+# 1. Utilities
+install_utilities() {
+    echo "[+] Installing essential utilities..."
+    apt update
+    apt install python3-pip nano wget unzip curl jq whois git pipx -y
+    wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz
+    rm -rf /usr/local/go
+    tar -C /usr/local -xzf go1.24.4.linux-amd64.tar.gz
+    rm -f go1.24.4.linux-amd64.tar.gz
+    export PATH=$PATH:/usr/local/go/bin:/root/go/bin
+    ln -sf /usr/bin/python3 /usr/bin/python
+    mkdir -p "$BIN_DIR" "$SRC_DIR"
+}
 
-########################## GOLANG BASED ######################################
-#nuclei
-go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+# 2. Symlinks
+link_binaries() {
+    ln -sf /root/go/bin/* /usr/local/bin/ 2>/dev/null
+    ln -sf /root/.local/bin/* /usr/local/bin/ 2>/dev/null
+    ln -sf "$BIN_DIR"/* /usr/local/bin/ 2>/dev/null
+}
 
-#httpx
-go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+# 3. Tool definitions and descriptions
+declare -A TOOLS
+declare -A DESCRIPTIONS
 
-#katana
-go install -v github.com/projectdiscovery/katana/cmd/katana@latest
+# Format: [tool_id]="install command"
+# Format: [tool_id]="description"
 
-#shuffledns
-go install -v github.com/projectdiscovery/shuffledns/cmd/shuffledns@latest
+# --- GO Tools ---
+TOOLS[nuclei]="go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest"
+DESCRIPTIONS[nuclei]="Vulnerability scanner using templates"
 
-#asnmap
-go install -v github.com/projectdiscovery/asnmap/cmd/asnmap@latest
+TOOLS[httpx]="go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest"
+DESCRIPTIONS[httpx]="Fast web server probing tool"
 
-#mapcidr
-go install -v github.com/projectdiscovery/mapcidr/cmd/mapcidr@latest
+TOOLS[katana]="go install -v github.com/projectdiscovery/katana/cmd/katana@latest"
+DESCRIPTIONS[katana]="High-performance crawling tool"
 
-#cdncheck
-go install -v github.com/projectdiscovery/cdncheck/cmd/cdncheck@latest
+TOOLS[ffuf]="go install github.com/ffuf/ffuf/v2@latest"
+DESCRIPTIONS[ffuf]="Web fuzzer for directories, parameters, etc"
 
-#tldfinder
-go install -v github.com/projectdiscovery/tldfinder/cmd/tldfinder@latest
+TOOLS[dalfox]="go install github.com/hahwul/dalfox/v2@latest"
+DESCRIPTIONS[dalfox]="XSS scanning and payload testing"
 
-#notify
-go install -v github.com/projectdiscovery/notify/cmd/notify@latest
+TOOLS[amass]="go install github.com/owasp-amass/amass/v4/...@master"
+DESCRIPTIONS[amass]="Advanced subdomain enumeration tool"
 
-#assetfinder
-go install github.com/tomnomnom/assetfinder@latest
+TOOLS[assetfinder]="go install github.com/tomnomnom/assetfinder@latest"
+DESCRIPTIONS[assetfinder]="Subdomain discovery using public sources"
 
-#waybackurls
-go install github.com/tomnomnom/waybackurls@latest
+TOOLS[waybackurls]="go install github.com/tomnomnom/waybackurls@latest"
+DESCRIPTIONS[waybackurls]="Fetch URLs from the Wayback Machine"
 
-#qsreplace
-go install github.com/tomnomnom/qsreplace@latest
+TOOLS[qsreplace]="go install github.com/tomnomnom/qsreplace@latest"
+DESCRIPTIONS[qsreplace]="Query string value replacer"
 
-#anew
-go install -v github.com/tomnomnom/anew@latest
+TOOLS[anew]="go install github.com/tomnomnom/anew@latest"
+DESCRIPTIONS[anew]="Append new unique lines to a file"
 
-#httprobe
-go install github.com/tomnomnom/httprobe@latest
+TOOLS[httprobe]="go install github.com/tomnomnom/httprobe@latest"
+DESCRIPTIONS[httprobe]="Check for active HTTP/S services"
 
-#gf
-go install github.com/tomnomnom/gf@latest
+TOOLS[gf]="go install github.com/tomnomnom/gf@latest"
+DESCRIPTIONS[gf]="Pattern matching for common vuln parameters"
 
-#gospider
-go install github.com/jaeles-project/gospider@latest
+TOOLS[gospider]="go install github.com/jaeles-project/gospider@latest"
+DESCRIPTIONS[gospider]="Fast web spider for recon"
 
-#dalfox
-go install github.com/hahwul/dalfox/v2@latest
+TOOLS[hakrawler]="go install github.com/hakluke/hakrawler@latest"
+DESCRIPTIONS[hakrawler]="Web crawler optimized for security testing"
 
-#hakrawler
-go install github.com/hakluke/hakrawler@latest
+TOOLS[shuffledns]="go install -v github.com/projectdiscovery/shuffledns/cmd/shuffledns@latest"
+DESCRIPTIONS[shuffledns]="Massive subdomain brute-forcer"
 
-#amass
-go install github.com/owasp-amass/amass/v4/...@master
+TOOLS[asnmap]="go install -v github.com/projectdiscovery/asnmap/cmd/asnmap@latest"
+DESCRIPTIONS[asnmap]="ASN and IP range discovery tool"
 
-#ffuf
-go install github.com/ffuf/ffuf/v2@latest
+TOOLS[mapcidr]="go install -v github.com/projectdiscovery/mapcidr/cmd/mapcidr@latest"
+DESCRIPTIONS[mapcidr]="CIDR block mapper and subnetting helper"
 
-#gobuster
-go install github.com/OJ/gobuster/v3@latest
+TOOLS[cdncheck]="go install -v github.com/projectdiscovery/cdncheck/cmd/cdncheck@latest"
+DESCRIPTIONS[cdncheck]="Detect if IPs are behind CDNs"
 
+TOOLS[tldfinder]="go install -v github.com/projectdiscovery/tldfinder/cmd/tldfinder@latest"
+DESCRIPTIONS[tldfinder]="TLD enumeration and discovery"
 
+TOOLS[notify]="go install -v github.com/projectdiscovery/notify/cmd/notify@latest"
+DESCRIPTIONS[notify]="Notification tool for pipeline outputs"
 
-ln -s /root/go/bin/* /usr/local/bin/
-########################## pip/pipx Based ######################################
+# --- Python/Pipx Tools ---
+TOOLS[uro]="pipx install uro"
+DESCRIPTIONS[uro]="URL deduplicator and cleaner"
 
-#uro
-pipx install uro
+TOOLS[bbot]="pipx install bbot"
+DESCRIPTIONS[bbot]="Modular OSINT and recon framework"
 
-#bbot
-pipx install bbot
+TOOLS[arjun]="pipx install arjun"
+DESCRIPTIONS[arjun]="GET/POST parameter discovery tool"
 
-#arjun
-pipx install arjun
+TOOLS[waymore]="pip install waymore --break-system-packages"
+DESCRIPTIONS[waymore]="Wayback Machine URL scraper + recon"
 
-#waymore
-pip install waymore --break-system-packages
+TOOLS[git-dumper]="pip install git-dumper --break-system-packages"
+DESCRIPTIONS[git-dumper]="Dump exposed .git repositories"
 
-#git-dumper
-pip install git-dumper --break-system-packages
+# --- Source-based Tools ---
+TOOLS[sqlmap]="
+    cd $SRC_DIR && git clone https://github.com/sqlmapproject/sqlmap || true
+    chmod +x $SRC_DIR/sqlmap/sqlmap.py
+    ln -sf $SRC_DIR/sqlmap/sqlmap.py /usr/local/bin/sqlmap
+"
+DESCRIPTIONS[sqlmap]="Powerful SQL injection detection tool"
 
+TOOLS[seclists]="
+    cd $SRC_DIR && git clone https://github.com/danielmiessler/SecLists || true
+    ln -sf $SRC_DIR/SecLists /opt/seclists
+"
+DESCRIPTIONS[seclists]="Huge collection of wordlists for pentesting"
 
-ln -s /root/.local/bin/* /usr/local/bin/
-########################## source Based ######################################
-cd /root/tools/sources
+# --- Binary Tools ---
+TOOLS[feroxbuster]="
+    cd $BIN_DIR
+    wget https://github.com/epi052/feroxbuster/releases/latest/download/x86_64-linux-feroxbuster.zip -O ferox.zip
+    unzip -o ferox.zip && chmod +x feroxbuster
+    rm -f ferox.zip*
+"
+DESCRIPTIONS[feroxbuster]="Recursive content discovery tool"
 
-#seclist
-git clone https://github.com/danielmiessler/SecLists
-ln -s /root/tools/sources/SecLists /opt/seclists
+TOOLS[findomain]="
+    cd $BIN_DIR
+    wget https://github.com/Findomain/Findomain/releases/latest/download/findomain-linux.zip -O findo.zip
+    unzip -o findo.zip && chmod +x findomain
+    rm -f findo.zip*
+"
+DESCRIPTIONS[findomain]="Fast subdomain enumerator"
 
-#sqlmap
-git clone https://github.com/sqlmapproject/sqlmap
-cd /root/tools/sources/sqlmap
-chmod +x sqlmap.py
-cd ../
-ln -s /root/tools/sources/sqlmap/sqlmap.py /usr/local/bin/sqlmap
+# 4. Tool installer - select individual
+install_selected_tools() {
+    echo "[*] Select tools to install (space-separated, e.g. 1 4 5):"
+    local i=1
+    declare -a keys
+    for key in "${!TOOLS[@]}"; do
+        printf " [%2d] %-15s - %s\n" "$i" "$key" "${DESCRIPTIONS[$key]}"
+        keys[$i]=$key
+        ((i++))
+    done
 
-########################## Binary Based ######################################
-cd /root/tools/bin
+    read -p "Enter numbers: " -a choices
 
-#feroxbuster
-wget https://github.com/epi052/feroxbuster/releases/latest/download/x86_64-linux-feroxbuster.zip && unzip -o x86_64-linux-feroxbuster.zip && chmod +x feroxbuster && rm x86_64-linux-feroxbuster.zip*
+    for choice in "${choices[@]}"; do
+        tool=${keys[$choice]}
+        if [[ -n "$tool" ]]; then
+            echo "[+] Installing $tool..."
+            eval "${TOOLS[$tool]}"
+        else
+            echo "[-] Invalid choice: $choice"
+        fi
+    done
 
+    link_binaries
+    cleanup_archives
+}
 
-#Findomain
-wget https://github.com/Findomain/Findomain/releases/latest/download/findomain-linux.zip && unzip -o findomain-linux.zip && chmod +x findomain && rm findomain-linux.zip*
+# 5. Install all tools
+install_all() {
+    echo "[+] Installing ALL tools..."
+    for key in "${!TOOLS[@]}"; do
+        echo "[*] Installing $key..."
+        eval "${TOOLS[$key]}"
+    done
+    link_binaries
+    cleanup_archives
+}
 
+# 6. Clean up archives
+cleanup_archives() {
+    echo "[*] Cleaning up archive files..."
+    find "$BIN_DIR" "$SRC_DIR" /tmp -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.tgz" \) -delete
+    echo "[✓] Cleanup complete!"
+}
 
-ln -s /root/tools/bin/* /usr/local/bin/
-###### Create link to /usr/local/bin #######
+# 7. Main menu
+show_main_menu() {
+    PS3="Choose an option: "
+    options=("Install Base Utilities" "Select Tools Individually" "Install All Tools" "Exit")
+    select opt in "${options[@]}"; do
+        case $REPLY in
+            1) install_utilities ;;
+            2) install_selected_tools ;;
+            3) install_all ;;
+            4) break ;;
+            *) echo "Invalid option." ;;
+        esac
+    done
+}
+
+# Run menu
+show_main_menu
